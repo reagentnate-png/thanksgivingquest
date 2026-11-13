@@ -115,12 +115,12 @@
       linear-gradient(90deg, transparent 2.6em, #f2a7a7 2.6em 2.8em, transparent 2.8em),
       repeating-linear-gradient(var(--paper) 0 1.85em, var(--line) 1.85em calc(1.85em + 1px));
     border-radius:3px;box-shadow:0 14px 30px rgba(0,0,0,.5);transform:rotate(-1.2deg);
-    padding:1.2em 1.2em 4.5em 3.4em;overflow-y:auto;overscroll-behavior:contain;font-family:var(--hand)}
+    padding:1em 1.2em 2.6em 3.4em;overflow-y:auto;overscroll-behavior:contain;font-family:var(--hand)}
   .paper.shake{animation:shake .4s steps(4)}
-  .paper h2{font-family:var(--hand);font-size:2.3em;margin:0;line-height:1;color:#1d3a6e}
-  .paper .sub{margin:.15em 0 .5em;font-size:1.5em;color:#7a2f2f}
+  .paper h2{font-family:var(--hand);font-size:1.9em;margin:0;line-height:1;color:#1d3a6e}
+  .paper .sub{margin:.1em 0 .35em;font-size:1.3em;color:#7a2f2f}
   .items{list-style:none;margin:0;padding:0;columns:2;column-gap:1.6em}
-  .item{position:relative;break-inside:avoid;width:fit-content;max-width:100%;font-size:1.65em;line-height:1.12;padding:.08em .3em;cursor:pointer;color:#1d2b4f;border-radius:30px;margin-bottom:.06em}
+  .item{position:relative;break-inside:avoid;width:fit-content;max-width:100%;font-size:1.45em;line-height:1.08;padding:.06em .3em;cursor:pointer;color:#1d2b4f;border-radius:30px;margin-bottom:.06em}
   .item:hover{background:rgba(214,58,58,.07)}
   .item .em{display:inline-block;width:1.4em;font-size:.85em}
   .item .slots{font-size:.7em;color:#6b7aa0;margin-left:.3em}
@@ -169,7 +169,7 @@
   .card .actions{margin-top:1.2em;display:flex;gap:.8em;flex-wrap:wrap}
 
   /* refuse + slam */
-  .refuse{display:block;margin-top:.7em;background:none;border:none;padding:0;font-family:var(--hand);font-size:1.5em;color:#7a2f2f;cursor:pointer;text-align:left}
+  .refuse{display:block;margin-top:.35em;background:none;border:none;padding:0;font-family:var(--hand);font-size:1.5em;color:#7a2f2f;cursor:pointer;text-align:left}
   .refuse:hover{text-decoration:underline wavy #d63a3a}
   .enemy .spr{transition:opacity .3s}
   .enemy .spr.gone{opacity:0}
@@ -209,8 +209,14 @@
   .card .hint{font-size:.65em;color:#8a6a4a;margin-top:.9em;line-height:1.7}
   .card .row.shame{display:none} .card .row.shame.on{display:flex}
 
+  .loader{display:none;margin-top:.6em;height:1.1em;border:3px solid var(--ink);border-radius:5px;background:#fff;overflow:hidden;position:relative}
+  .loader.on{display:block}
+  .loader i{position:absolute;top:0;bottom:0;width:30%;background:repeating-linear-gradient(90deg,var(--orange) 0 8px,var(--gold) 8px 16px);animation:slide 1.1s steps(10) infinite}
+  @keyframes slide{from{left:-30%}to{left:100%}}
+  .dots::after{content:'';animation:dots 1.2s steps(4) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
   .mute{position:absolute;top:8px;right:8px;z-index:20;background:rgba(255,255,255,.85);border:3px solid var(--ink);border-radius:4px;font-size:.75em;padding:.4em .5em}
-  @media (max-width:520px){ .items{columns:1} .listbar{left:20%;right:20%} }
+  @media (max-width:520px){ .items{column-gap:.6em} .item{font-size:1.4em} .listbar{left:20%;right:20%} }
   @media (orientation:portrait) and (max-width:700px){
     .stage{aspect-ratio:9/15; font-size:clamp(9px, 2.6vw, 13px)}
     .field, #inside .room{height:74%; bottom:auto}
@@ -272,7 +278,6 @@
       <h2 id="listTitle"></h2>
       <p class="sub" id="listSub"></p>
       <ul class="items" id="itemList"></ul>
-      <label class="writein">Something else: <input id="writeIn" maxlength="60" placeholder="________"></label>
       <button class="refuse" id="refuseBtn">☐ I'm not bringing anything.</button>
     </div>
     <div class="hand l" id="handL"></div>
@@ -288,7 +293,7 @@
     <div class="room">
       <div class="wallpaper"></div>
       <div class="win a"></div><div class="win b"></div>
-      <div class="fam"><span>👵</span><span>👴</span><span>🧔</span><span>👩</span><span>🧒</span><span>🐕</span></div>
+      <div class="fam"><span>👵</span><span>👴</span><span>🧔</span><span>👩</span><span>🧒</span><span>🐈</span></div>
       <div class="table"><div class="food" id="tableFood"></div></div>
     </div>
     <div class="menu" id="menu">
@@ -345,6 +350,7 @@
   <div class="textbox" id="textbox">
     <div class="speaker" id="speaker" hidden></div>
     <div class="txt" id="txt"></div>
+    <div class="loader" id="loader"><i></i></div>
     <form class="namefield" id="nameForm" hidden>
       <input id="nameInput" maxlength="24" autocomplete="off" placeholder="YOUR NAME" aria-label="Your name">
       <button class="btn" type="submit">OK</button>
@@ -661,15 +667,23 @@ function waitClick(btn) {
 function joinList(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 
 /* ---------- Backend ---------- */
-async function loadClaims() {
+async function fetchClaims() {
   if (!CONFIG.SUBMIT_URL) {
     try { state.claims = JSON.parse(localStorage.getItem("tq_demo_claims") || "{}"); } catch (e) {}
     return;
   }
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 9000);
   try {
-    const r = await fetch(CONFIG.SUBMIT_URL + "?action=claims", { cache: "no-store" });
+    const r = await fetch(CONFIG.SUBMIT_URL + "?action=claims", { cache: "no-store", signal: ctl.signal });
     const j = await r.json(); state.claims = j.claims || {};
   } catch (e) { console.warn("Couldn't load claims", e); }
+  finally { clearTimeout(to); }
+}
+// Starts once (at Press Start) so it's usually done before the list is needed
+let claimsPromise = null;
+function loadClaims(force) {
+  if (!claimsPromise || force) claimsPromise = fetchClaims();
+  return claimsPromise;
 }
 async function submit() {
   const items = [...state.selected];
@@ -741,7 +755,18 @@ async function scene1() {
   await say(null, `${N.toUpperCase()} used PLAYING DUMB!\nIt's not very effective...`);
   setBar("patBar", 8); blip(140, .25);
   await say(null, `${GU}'s PATIENCE is dangerously low!`);
-  await say(G, `Don't you "bringing?" me. Here. Take the list. Circle what you're bringing, and I mean it.`);
+  await say(G, `Don't you "bringing?" me. Stay RIGHT there. I'm going to go get the list.`);
+
+  // Loading screen: Aunt goes inside to grab the list while claims finish loading
+  aunt.classList.add("gone"); blip(260, .1);
+  $("#speaker").hidden = true;
+  $("#txt").innerHTML = ""; const t = document.createElement("span"); t.className = "dots";
+  t.textContent = `${GU} went inside to grab the list`; $("#txt").appendChild(t);
+  $("#loader").classList.add("on");
+  await Promise.all([loadClaims(), sleep(1800)]);
+  $("#loader").classList.remove("on");
+  aunt.classList.remove("gone"); blip(660, .06); setTimeout(() => blip(880, .08), 80);
+  await say(G, `Found it. Here. Circle what you're bringing, and I mean it.`);
   scene2();
 }
 
@@ -785,20 +810,19 @@ function toggleItem(id, li) {
   updateCount();
 }
 function updateCount() {
-  const n = state.selected.size + (($("#writeIn").value || "").trim() ? 1 : 0);
+  const n = state.selected.size;
   $("#selCount").textContent = n + " CIRCLED";
 }
-$("#writeIn").addEventListener("input", updateCount);
 
-async function scene2() {
+async function scene2(refresh) {
   showScene("list", false); Music.play("list");
-  await loadClaims();
   renderList();
+  if (refresh) { await loadClaims(true); if ($("#list").classList.contains("on")) renderList(); }
 }
 $("#doneBtn").onclick = e => {
   e.stopPropagation();
-  state.writeIn = $("#writeIn").value.trim();
-  if (!state.selected.size && !state.writeIn) return refuseScene();
+  state.writeIn = "";
+  if (!state.selected.size) return refuseScene();
   scene3();
 };
 $("#refuseBtn").onclick = e => { e.stopPropagation(); blip(200, .1); refuseScene(); };
@@ -807,7 +831,7 @@ $("#refuseBtn").onclick = e => { e.stopPropagation(); blip(200, .1); refuseScene
 async function refuseScene() {
   state.refusals++;
   const r = state.refusals, NU = state.name.toUpperCase();
-  state.selected.clear(); state.writeIn = ""; $("#writeIn").value = "";
+  state.selected.clear(); state.writeIn = "";
   showScene("battle"); Music.play("sad");
   const aunt = $("#auntSpr"); aunt.classList.remove("gone");
   $("#held").innerHTML = ""; $("#hpText").textContent = "ITEMS: 0";
@@ -831,7 +855,7 @@ async function refuseScene() {
   } else {
     await say(G, `Strike ${r}. I'm calling your mother.`);
     setBar("patBar", 0); setBar("hungerBar", 4); blip(140, .3);
-    await say(G, `Even the dog brought something. He brought a tennis ball. Bring. SOMETHING.`);
+    await say(G, `Even the cat brought something. She brought a dead mouse. Bring. SOMETHING.`);
   }
   aunt.classList.add("gone"); await sleep(350);
   const fld = document.querySelector("#battle .field");
@@ -929,7 +953,7 @@ function renderCouch() {
     `<div class="person"><span class="mini">${sprite(AUNT, PAL)}</span><span class="ph">📱</span></div>`,
     `<div class="person you" id="youSeat"><span class="cap">🧢</span>🧑<span class="ph">📱</span></div>`,
     `<div class="person">🧒<span class="ph">📱</span></div>`,
-    `<div class="person">🐕<span class="ph">📱</span></div>`
+    `<div class="person">🐈<span class="ph">📱</span></div>`
   ];
   $("#people").innerHTML = ppl.join("");
   document.querySelector("#living .pball").textContent = "🏈";
@@ -952,7 +976,7 @@ async function livingRoom(savePromise) {
   await say("TV", `TOUCHDOWN!!!`);
   $("#td").classList.remove("on");
   await say(null, `Nobody looked up.`, { speed: 60 });
-  await say(null, `Grandpa is asleep. Everyone else is scrolling on their phones. Even the dog.`);
+  await say(null, `Grandpa is asleep. Everyone else is scrolling on their phones. Even the cat.`);
   await say(G, `Isn't this nice? The whole family, together.`);
   await say(null, `${GU} did not look up from her phone either.`);
   $("#youSeat").classList.add("on"); blip(880, .08);
@@ -977,7 +1001,7 @@ function showFinal(res) {
     : res.ok ? `SAVED! ${G} has your name on the list. See you on Thanksgiving, ${state.name}!`
              : "Hmm, couldn't reach the family list. Check your internet and try again.";
 }
-$("#againBtn").onclick = e => { e.stopPropagation(); started = true; scene2(); };
+$("#againBtn").onclick = e => { e.stopPropagation(); started = true; scene2(true); };
 $("#finishBtn").onclick = e => { e.stopPropagation(); blip(990, .1); window.location.href = DONE_URL; };
 </script>
 </body>
