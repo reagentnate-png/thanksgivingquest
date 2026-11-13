@@ -168,6 +168,47 @@
   .card .status{font-size:.75em;line-height:1.8;margin-top:1em;padding:.8em;border:3px dashed #a8934a;border-radius:6px}
   .card .actions{margin-top:1.2em;display:flex;gap:.8em;flex-wrap:wrap}
 
+  /* refuse + slam */
+  .refuse{display:block;margin-top:.7em;background:none;border:none;padding:0;font-family:var(--hand);font-size:1.5em;color:#7a2f2f;cursor:pointer;text-align:left}
+  .refuse:hover{text-decoration:underline wavy #d63a3a}
+  .enemy .spr{transition:opacity .3s}
+  .enemy .spr.gone{opacity:0}
+  .slam{position:absolute;left:58%;top:20%;font-size:3em;color:var(--red);text-shadow:3px 3px 0 var(--ink),-2px -2px 0 #fff;display:none;z-index:4;transform:rotate(-8deg)}
+  .slam.on{display:block;animation:pop .25s steps(3)}
+
+  /* ---------- Living room ---------- */
+  #living .lroom{position:absolute;inset:0 0 30% 0;background:#5f8a6a;overflow:hidden}
+  #living .lwall{position:absolute;inset:0;background:repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 20px, transparent 20px 40px)}
+  #living .floor{position:absolute;left:0;right:0;bottom:0;height:24%;background:repeating-linear-gradient(90deg,#8a5a34 0 60px,#7a4e2c 60px 63px);border-top:4px solid var(--ink)}
+  #living .rug{position:absolute;left:30%;right:8%;bottom:3%;height:12%;background:#c9a24a;border:3px solid var(--ink);border-radius:50%}
+  .tvwrap{position:absolute;left:4%;top:7%;width:42%}
+  .tv{background:#1b1b1f;border:4px solid var(--ink);border-radius:6px;padding:4%;box-shadow:0 0 40px rgba(130,210,255,.45)}
+  .screen{position:relative;aspect-ratio:16/10;overflow:hidden;background:repeating-linear-gradient(90deg,#2f8f3a 0 10%,#36a043 10% 20%)}
+  .gridiron{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(255,255,255,.75) calc(10% - 2px) 10%)}
+  .plyr{position:absolute;width:5%;aspect-ratio:1/1.5;border:1px solid #111;animation:run 2.6s ease-in-out infinite alternate}
+  .plyr.a{background:#d63a3a} .plyr.b{background:#f2f2f2}
+  @keyframes run{from{left:18%}to{left:72%}}
+  .pball{position:absolute;top:44%;font-size:.9em;animation:run 2.6s ease-in-out infinite alternate}
+  .score{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);color:#fff;font-size:.5em;padding:.45em;text-align:center;white-space:nowrap}
+  .td{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--gold);font-size:1.15em;text-shadow:2px 2px 0 var(--ink);background:rgba(0,0,0,.35)}
+  .td.on{display:flex;animation:blink .3s steps(1) 8}
+  .tvstand{width:70%;height:1.4em;margin:0 auto;background:#5a3a22;border:4px solid var(--ink);border-top:none}
+  .plant{position:absolute;left:47%;bottom:22%;font-size:2.4em}
+  .couch{position:absolute;right:3%;bottom:13%;width:50%;height:50%}
+  .cback{position:absolute;left:5%;right:5%;top:10%;height:58%;background:#7a2f2f;border:4px solid var(--ink);border-radius:16px 16px 0 0}
+  .cseat{position:absolute;left:0;right:0;bottom:0;height:38%;background:#9e3b3b;border:4px solid var(--ink);border-radius:10px}
+  .people{position:absolute;left:7%;right:7%;bottom:24%;display:flex;justify-content:space-around;align-items:flex-end;z-index:3}
+  .person{position:relative;text-align:center;font-size:2.7em;line-height:1}
+  .person .ph{display:block;font-size:.5em;margin-top:.05em;filter:drop-shadow(0 0 5px #8fdcff) drop-shadow(0 0 2px #8fdcff);animation:glow 1.6s steps(2) infinite}
+  @keyframes glow{50%{filter:drop-shadow(0 0 9px #b8ebff)}}
+  .person .zz{position:absolute;top:-.7em;right:-.4em;font-size:.5em;animation:idle 1s steps(2) infinite}
+  .person .cap{position:absolute;top:-.45em;left:50%;transform:translateX(-50%);font-size:.6em}
+  .person .mini{width:1.15em;display:inline-block}
+  .person.you{display:none} .person.you.on{display:block;animation:pop .3s steps(3)}
+  .btn.go{background:#3f8f46}
+  .card .hint{font-size:.65em;color:#8a6a4a;margin-top:.9em;line-height:1.7}
+  .card .row.shame{display:none} .card .row.shame.on{display:flex}
+
   .mute{position:absolute;top:8px;right:8px;z-index:20;background:rgba(255,255,255,.85);border:3px solid var(--ink);border-radius:4px;font-size:.75em;padding:.4em .5em}
   @media (max-width:520px){ .items{columns:1} .listbar{left:20%;right:20%} }
   @media (orientation:portrait) and (max-width:700px){
@@ -184,6 +225,10 @@
     .paper{left:5%;right:5%;bottom:13%}
     .hand{width:24%}
     .menu{bottom:29%;left:6%;right:6%}
+    #living .lroom{inset:0 0 26% 0}
+    .tvwrap{left:12%;width:76%;top:5%}
+    .couch{left:3%;right:3%;width:auto;bottom:6%;height:40%}
+    .plant{display:none}
   }
   @media (prefers-reduced-motion:reduce){ *{animation-duration:.01ms !important} }
 </style>
@@ -205,6 +250,7 @@
   <section class="scene" id="battle">
     <div class="field">
       <div class="house"><div class="door"></div><div class="wreath">🍂</div></div>
+      <div class="slam" id="slam">SLAM!</div>
       <div class="infobox enemy-box">
         <div class="nm" id="enemyName"></div><div class="lv">Lv67</div>
         <div class="barrow"><span>PATIENCE</span><div class="bar"><i id="patBar"></i></div></div>
@@ -227,6 +273,7 @@
       <p class="sub" id="listSub"></p>
       <ul class="items" id="itemList"></ul>
       <label class="writein">Something else: <input id="writeIn" maxlength="60" placeholder="________"></label>
+      <button class="refuse" id="refuseBtn">☐ I'm not bringing anything.</button>
     </div>
     <div class="hand l" id="handL"></div>
     <div class="hand r" id="handR"></div>
@@ -251,6 +298,32 @@
     </div>
   </section>
 
+  <!-- LIVING ROOM -->
+  <section class="scene" id="living">
+    <div class="lroom">
+      <div class="lwall"></div><div class="floor"></div><div class="rug"></div>
+      <div class="tvwrap">
+        <div class="tv"><div class="screen">
+          <div class="gridiron"></div>
+          <div class="plyr a" style="top:22%;animation-delay:-.2s"></div>
+          <div class="plyr a" style="top:52%;animation-delay:-.9s"></div>
+          <div class="plyr b" style="top:32%;animation-delay:-1.4s"></div>
+          <div class="plyr b" style="top:62%;animation-delay:-.5s"></div>
+          <div class="pball"></div>
+          <div class="td" id="td">TOUCHDOWN!</div>
+          <div class="score">HOME 21 · AWAY 17 · 4TH 2:00</div>
+        </div></div>
+        <div class="tvstand"></div>
+      </div>
+      <div class="plant">🪴</div>
+      <div class="couch">
+        <div class="cback"></div>
+        <div class="people" id="people"></div>
+        <div class="cseat"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- DONE -->
   <section class="scene" id="done">
     <div class="card" id="card">
@@ -258,8 +331,13 @@
       <div class="row"><div class="k">TRAINER</div><div class="v" id="cName"></div></div>
       <div class="row"><div class="k">BRINGING</div><div class="v" id="cItems"></div></div>
       <div class="row"><div class="k">GAME PLAN</div><div class="v" id="cSeat"></div></div>
+      <div class="row shame" id="shameRow"><div class="k">TIMES SENT TO THE CAR</div><div class="v" id="cShame"></div></div>
       <div class="status" id="cStatus">Saving your quest…</div>
-      <div class="actions"><button class="btn" id="againBtn">↺ CHANGE MY ANSWERS</button></div>
+      <div class="actions">
+        <button class="btn" id="againBtn">↺ CHANGE MY ANSWERS</button>
+        <button class="btn go" id="finishBtn">✓ DONE</button>
+      </div>
+      <div class="hint">DONE takes you to Kroger to grab what you signed up for. 🛒</div>
     </div>
   </section>
 
@@ -285,11 +363,11 @@
 const CONFIG = {
   // Paste your Google Apps Script web-app URL here (see README).
   // Leave empty to run in demo mode (answers are only kept in this browser).
-  SUBMIT_URL: "https://script.google.com/macros/s/AKfycbxjJ4FwLHVvsj9tCRR-yY-0646dUvI6MYxH6FSncRvpDYFaTo0tVv2G3HQEsNJbRwcY/exec",
+  SUBMIT_URL: "",
 
-  GUARD_NAME: "Aunt Serdah",        // who's guarding the front door
+  GUARD_NAME: "Aunt Deb",        // who's guarding the front door
   YEAR: 2026,
-  FAMILY: "The Richards Family",
+  FAMILY: "The Family",
 
   // id must be unique. slots = how many people can claim it.
   ITEMS: [
@@ -300,18 +378,21 @@ const CONFIG = {
     { id:"gravy",     name:"Gravy",                 emoji:"🥣", slots:1 },
     { id:"greenbean", name:"Green Bean Casserole",  emoji:"🫛", slots:1 },
     { id:"mac",       name:"Mac & Cheese",          emoji:"🧀", slots:1 },
-    { id:"cheesypotatos",      name:"Cheesy Potato's",          emoji:"🍠", slots:1 },
-    { id:"spritecranberry", name:"Sprite Cranberry",       emoji:"🍒", slots:1 },
+    { id:"yams",      name:"Candied Yams",          emoji:"🍠", slots:1 },
+    { id:"cranberry", name:"Cranberry Sauce",       emoji:"🍒", slots:1 },
     { id:"rolls",     name:"Dinner Rolls",          emoji:"🥖", slots:1 },
-    { id:"chocolatepie",     name:"Chocolate Creme Pie",emoji:"🍫", slots:1 },
+    { id:"salad",     name:"Salad (someone has to)",emoji:"🥗", slots:1 },
     { id:"pumpkin",   name:"Pumpkin Pie",           emoji:"🥧", slots:1 },
     { id:"applepie",  name:"Apple Pie",             emoji:"🍎", slots:1 },
-    { id:"drinks",    name:"Soda",                emoji:"🥤", slots:2 },
-    { id:"alcohol",      name:"Alcohol",                  emoji:"🍷", slots:12 },
-    { id:"ice",       name:"Ice",                   emoji:"🧊", slots:3 },
-    { id:"plates",    name:"Festive Napkins",   emoji:"🍽️", slots:1 },
+    { id:"drinks",    name:"Drinks",                emoji:"🥤", slots:2 },
+    { id:"wine",      name:"Wine",                  emoji:"🍷", slots:2 },
+    { id:"ice",       name:"Ice",                   emoji:"🧊", slots:1 },
+    { id:"plates",    name:"Plates, Cups & Foil",   emoji:"🍽️", slots:1 },
   ]
 };
+
+// Where the DONE button goes at the very end
+const DONE_URL = CONFIG.DONE_URL || "https://www.kroger.com/search?query=thanksgiving%20dinner&searchType=suggestions";
 
 /* =====================================================================
    Game engine — no need to edit below unless you want to
@@ -319,7 +400,7 @@ const CONFIG = {
 const $ = s => document.querySelector(s);
 const G = CONFIG.GUARD_NAME;
 const GU = G.toUpperCase();
-const state = { name:"", selected:new Set(), writeIn:"", seating:"", claims:{} };
+const state = { name:"", selected:new Set(), writeIn:"", seating:"", claims:{}, refusals:0 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- Pixel sprites (half rows are mirrored) ---------- */
@@ -470,7 +551,7 @@ async function submit() {
   const payload = {
     name: state.name, items,
     itemNames: items.map(id => CONFIG.ITEMS.find(i => i.id === id).name),
-    writeIn: state.writeIn, seating: state.seating, ts: new Date().toISOString()
+    writeIn: state.writeIn, seating: state.seating, refusals: state.refusals, ts: new Date().toISOString()
   };
   if (!CONFIG.SUBMIT_URL) {
     // demo mode: remember claims locally so you can test the "taken" display
@@ -506,6 +587,7 @@ async function scene1() {
   const b = $("#battle"); b.classList.remove("entered"); void b.offsetWidth; b.classList.add("entered");
   $("#held").innerHTML = ""; $("#playerName").textContent = state.name || "???";
   setBar("patBar", 100); setBar("hungerBar", 90); $("#hpText").textContent = "ITEMS: 0";
+  $("#auntSpr").classList.remove("gone");
   $("#txt").textContent = ""; $("#speaker").hidden = true;
   await sleep(950);
   const aunt = $("#auntSpr");
@@ -590,14 +672,53 @@ async function scene2() {
 $("#doneBtn").onclick = e => {
   e.stopPropagation();
   state.writeIn = $("#writeIn").value.trim();
-  if (!state.selected.size && !state.writeIn) {
-    blip(150, .2); $("#paper").classList.add("shake");
-    setTimeout(() => $("#paper").classList.remove("shake"), 450);
-    toast(`${G}: "Oh no you don't. Circle SOMETHING."`);
-    return;
-  }
+  if (!state.selected.size && !state.writeIn) return refuseScene();
   scene3();
 };
+$("#refuseBtn").onclick = e => { e.stopPropagation(); blip(200, .1); refuseScene(); };
+
+/* Refusal — no empty hands get through this door */
+async function refuseScene() {
+  state.refusals++;
+  const r = state.refusals, NU = state.name.toUpperCase();
+  state.selected.clear(); state.writeIn = ""; $("#writeIn").value = "";
+  showScene("battle");
+  const aunt = $("#auntSpr"); aunt.classList.remove("gone");
+  $("#held").innerHTML = ""; $("#hpText").textContent = "ITEMS: 0";
+  setBar("patBar", 25);
+  $("#txt").textContent = ""; $("#speaker").hidden = true;
+
+  await say(null, `${NU} handed back a completely blank list.`);
+  if (r === 1) {
+    await say(G, `...Is this a joke?`);
+    $("#bang").classList.add("on"); blip(300, .15);
+    await say(null, `${GU} used DISAPPOINTED STARE!\nIt's super effective!`);
+    $("#bang").classList.remove("on");
+    setBar("patBar", 0); setBar("hungerBar", 25); blip(140, .3);
+    await say(G, `Empty handed? AGAIN? Oh no. Not this year. No empty hands get through this door.`);
+    await say(G, `Go sit in the car and rethink your decisions.`);
+  } else if (r === 2) {
+    await say(G, `Oh, you're back. With NOTHING. Again.`);
+    setBar("patBar", 0); setBar("hungerBar", 12); blip(140, .3);
+    await say(G, `Grandma's been asking about you, you know. I'll tell her you're "busy."`);
+    await say(G, `Car. Now. Think about what you've done.`);
+  } else {
+    await say(G, `Strike ${r}. I'm calling your mother.`);
+    setBar("patBar", 0); setBar("hungerBar", 4); blip(140, .3);
+    await say(G, `Even the dog brought something. He brought a tennis ball. Bring. SOMETHING.`);
+  }
+  aunt.classList.add("gone"); await sleep(350);
+  const fld = document.querySelector("#battle .field");
+  $("#slam").classList.add("on"); fld.classList.add("shake"); blip(80, .4);
+  setTimeout(() => fld.classList.remove("shake"), 450);
+  await say(null, `The door slammed shut in ${NU}'s face.`);
+  $("#slam").classList.remove("on");
+  await say(null, `${NU} is hungry and alone on the porch.\nMaybe rethink that list...`, { noWait: true });
+  $("#walkBtn").textContent = "RETHINK IT ▶";
+  await waitClick($("#walkBtn"));
+  aunt.classList.remove("gone");
+  showScene("list", false); renderList();
+}
 
 /* Scene 3 — back at the door, arms full */
 async function scene3() {
@@ -607,6 +728,7 @@ async function scene3() {
   const names = picks.map(i => i.name.toUpperCase());
   if (state.writeIn) names.push(state.writeIn.toUpperCase());
   const held = $("#held"); held.innerHTML = "";
+  $("#auntSpr").classList.remove("gone");
   setBar("patBar", 8);
   $("#txt").textContent = ""; $("#speaker").hidden = true;
 
@@ -625,6 +747,7 @@ async function scene3() {
   await say(G, `Well. I am glad you did not come empty handed today like you always do.`);
   await say(N, `...That was ONE time.`);
   await say(G, `It was four times. Go on, get in here. And wipe your feet.`, { noWait: true });
+  $("#walkBtn").textContent = "WALK IN ▶";
   await waitClick($("#walkBtn"));
   scene4();
 }
@@ -669,14 +792,55 @@ async function scene4() {
     await say(null, `The whole family is filled with RAGE!\nIt's super effective!`);
     await say(G, `You walked in FOUR SECONDS AGO!`);
   }
-  await say(null, `Saving your quest...`, { noWait: true });
-  scene5();
+  livingRoom(submit());
 }
 
-/* Scene 5 — results card */
-async function scene5() {
-  const res = await submit();
+/* Scene 5 — the living room: game's on, nobody's watching */
+function renderCouch() {
+  const ppl = [
+    `<div class="person">👴<span class="zz">💤</span></div>`,
+    `<div class="person">👩<span class="ph">📱</span></div>`,
+    `<div class="person"><span class="mini">${sprite(AUNT, PAL)}</span><span class="ph">📱</span></div>`,
+    `<div class="person you" id="youSeat"><span class="cap">🧢</span>🧑<span class="ph">📱</span></div>`,
+    `<div class="person">🧒<span class="ph">📱</span></div>`,
+    `<div class="person">🐕<span class="ph">📱</span></div>`
+  ];
+  $("#people").innerHTML = ppl.join("");
+  document.querySelector("#living .pball").textContent = "🏈";
+}
+async function livingRoom(savePromise) {
+  showScene("living"); renderCouch();
+  const NU = state.name.toUpperCase();
+  $("#txt").textContent = ""; $("#speaker").hidden = true;
+  await sleep(300);
+  if (state.seating === "Doggie Bag") {
+    await say(null, `${NU} tried to sneak out with the doggie bag...`);
+    await say(G, `Oh no you don't. Sit. Down. It's FAMILY time.`);
+  } else if (state.seating === "Second Round") {
+    await say(null, `${NU} wanders into the living room with a perfectly timed second plate.`);
+  } else {
+    await say(null, `${NU} wanders into the living room with a plate piled sky-high.`);
+  }
+  await say(null, `The big game is on the TV. Nobody is watching it.`);
+  $("#td").classList.add("on"); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, .1), i * 110));
+  await say("TV", `TOUCHDOWN!!!`);
+  $("#td").classList.remove("on");
+  await say(null, `Nobody looked up.`, { speed: 60 });
+  await say(null, `Grandpa is asleep. Everyone else is scrolling on their phones. Even the dog.`);
+  await say(G, `Isn't this nice? The whole family, together.`);
+  await say(null, `${GU} did not look up from her phone either.`);
+  $("#youSeat").classList.add("on"); blip(880, .08);
+  await say(null, `${NU} sits down, pulls out their phone, and joins the family tradition.\nHappy Thanksgiving!`);
+  await say(null, `Saving your quest...`, { noWait: true });
+  const res = await savePromise;
+  showFinal(res);
+}
+
+/* Scene 6 — results card */
+function showFinal(res) {
   showScene("done", false);
+  $("#cShame").textContent = state.refusals;
+  $("#shameRow").classList.toggle("on", state.refusals > 0);
   const picks = CONFIG.ITEMS.filter(i => state.selected.has(i.id)).map(i => `${i.emoji} ${i.name}`);
   if (state.writeIn) picks.push("🎁 " + state.writeIn);
   $("#cName").textContent = state.name;
@@ -688,6 +852,7 @@ async function scene5() {
              : "Hmm, couldn't reach the family list. Check your internet and try again.";
 }
 $("#againBtn").onclick = e => { e.stopPropagation(); started = true; scene2(); };
+$("#finishBtn").onclick = e => { e.stopPropagation(); blip(990, .1); window.location.href = DONE_URL; };
 </script>
 </body>
 </html>
