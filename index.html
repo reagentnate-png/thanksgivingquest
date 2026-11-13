@@ -687,8 +687,9 @@ function loadClaims(force) {
 }
 async function submit() {
   const items = [...state.selected];
+  const slots = {}; items.forEach(id => slots[id] = CONFIG.ITEMS.find(i => i.id === id).slots || 1);
   const payload = {
-    name: state.name, items,
+    name: state.name, items, slots,
     itemNames: items.map(id => CONFIG.ITEMS.find(i => i.id === id).name),
     writeIn: state.writeIn, seating: state.seating, refusals: state.refusals, ts: new Date().toISOString()
   };
@@ -702,12 +703,24 @@ async function submit() {
     } catch (e) {}
     return { ok: true, demo: true };
   }
+  const body = JSON.stringify(payload), headers = { "Content-Type": "text/plain;charset=utf-8" };
   try {
-    await fetch(CONFIG.SUBMIT_URL, { method: "POST", mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-    return { ok: true };
-  } catch (e) { return { ok: false, error: e }; }
+    const r = await fetch(CONFIG.SUBMIT_URL, { method: "POST", headers, body });
+    const j = await r.json();
+    const rejected = (j.rejected || []).filter(id => state.selected.has(id));
+    rejected.forEach(id => state.selected.delete(id));
+    return { ok: j.ok !== false, rejected };
+  } catch (e) {
+    // Couldn't read the reply; make sure it still gets saved
+    try { await fetch(CONFIG.SUBMIT_URL, { method: "POST", mode: "no-cors", headers, body }); return { ok: true }; }
+    catch (e2) { return { ok: false, error: e2 }; }
+  }
 }
+
+function othersOn(id) {
+  return (state.claims[id] || []).filter(n => n.toLowerCase() !== state.name.toLowerCase());
+}
+function isFull(it) { return othersOn(it.id).length >= (it.slots || 1); }
 
 /* =====================================================================
    STORY
@@ -783,16 +796,17 @@ function scribble() {
 function renderList() {
   const ul = $("#itemList"); ul.innerHTML = "";
   CONFIG.ITEMS.forEach(it => {
-    const others = (state.claims[it.id] || []).filter(n => n.toLowerCase() !== state.name.toLowerCase());
-    const full = others.length >= (it.slots || 1);
+    const others = othersOn(it.id);
+    const slots = it.slots || 1, full = others.length >= slots, left = slots - others.length;
+    if (full) state.selected.delete(it.id);
     const li = document.createElement("li");
     li.className = "item" + (full ? " taken" : "");
-    li.innerHTML = `<span class="em"></span><span class="lbl"></span>${it.slots > 1 ? `<span class="slots">(need ${it.slots})</span>` : ""}<span class="by"></span>`;
+    li.innerHTML = `<span class="em"></span><span class="lbl"></span>${slots > 1 && !full ? `<span class="slots">(${left} of ${slots} left)</span>` : ""}<span class="by"></span>`;
     li.querySelector(".em").textContent = it.emoji;
     li.querySelector(".lbl").textContent = it.name;
-    if (others.length) li.querySelector(".by").textContent = (full ? "taken — " : "+ ") + others.join(", ");
+    if (others.length) li.querySelector(".by").textContent = (full ? "covered — " : "+ ") + (others.length > 3 ? others.slice(0, 3).join(", ") + ` +${others.length - 3} more` : others.join(", "));
     li.onclick = () => {
-      if (full) { blip(150, .15); toast(`${others.join(" & ")} already called it!`); return; }
+      if (full) { blip(150, .15); toast(slots > 1 ? `We already have enough ${it.name}!` : `${others.join(" & ")} already called it!`); return; }
       toggleItem(it.id, li);
     };
     ul.appendChild(li);
@@ -819,10 +833,23 @@ async function scene2(refresh) {
   renderList();
   if (refresh) { await loadClaims(true); if ($("#list").classList.contains("on")) renderList(); }
 }
-$("#doneBtn").onclick = e => {
+let checking = false;
+$("#doneBtn").onclick = async e => {
   e.stopPropagation();
+  if (checking) return;
   state.writeIn = "";
   if (!state.selected.size) return refuseScene();
+  // Re-check the sheet in case someone else just grabbed something
+  checking = true; const btn = $("#doneBtn"), label = btn.textContent;
+  btn.textContent = "CHECKING..."; btn.disabled = true;
+  await loadClaims(true);
+  btn.textContent = label; btn.disabled = false; checking = false;
+  const gone = CONFIG.ITEMS.filter(it => state.selected.has(it.id) && isFull(it));
+  if (gone.length) {
+    blip(150, .2); renderList();
+    toast(`Too late! Someone just covered ${joinList(gone.map(g => g.name))}. Pick something else.`);
+    return;
+  }
   scene3();
 };
 $("#refuseBtn").onclick = e => { e.stopPropagation(); blip(200, .1); refuseScene(); };
@@ -996,6 +1023,12 @@ function showFinal(res) {
   $("#cName").textContent = state.name;
   $("#cItems").innerHTML = ""; picks.forEach(p => { const d = document.createElement("div"); d.textContent = p; $("#cItems").appendChild(d); });
   $("#cSeat").textContent = state.seating;
+  const lost = (res.rejected || []).map(id => CONFIG.ITEMS.find(i => i.id === id)?.name).filter(Boolean);
+  if (lost.length) {
+    $("#cStatus").textContent = `UH OH! Someone covered ${joinList(lost)} while you were walking in. ` +
+      (state.selected.size ? "The rest is saved. " : "") + "Tap CHANGE MY ANSWERS to pick something else.";
+    return;
+  }
   $("#cStatus").textContent = res.demo
     ? "DEMO MODE: saved in this browser only. Add your SUBMIT_URL in index.html to collect everyone's answers."
     : res.ok ? `SAVED! ${G} has your name on the list. See you on Thanksgiving, ${state.name}!`
