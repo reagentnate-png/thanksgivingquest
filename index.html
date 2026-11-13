@@ -454,18 +454,140 @@ for (let i = 0; i < 14; i++) {
   leaves.appendChild(l);
 }
 
-/* ---------- Sound ---------- */
+/* ---------- Sound + music (original chiptune, generated live) ---------- */
 let actx = null, muted = false;
+function ctx() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  return actx;
+}
 function blip(f = 660, d = 0.03) {
   if (muted) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = actx.createOscillator(), g = actx.createGain();
+    const c = ctx(); const o = c.createOscillator(), g = c.createGain();
     o.type = "square"; o.frequency.value = f; g.gain.value = 0.025;
-    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + d);
   } catch (e) {}
 }
-$("#mute").onclick = e => { e.stopPropagation(); muted = !muted; e.target.textContent = muted ? "♪ OFF" : "♪ ON"; };
+
+const MUSIC_VOLUME = (CONFIG.MUSIC_VOLUME ?? 0.8);
+const Music = (() => {
+  const freq = n => {
+    const m = n.match(/^([A-G])(#|b)?(\d)$/); if (!m) return 0;
+    const semi = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
+    return 440 * Math.pow(2, ((+m[3] + 1) * 12 + semi - 69) / 12);
+  };
+  const parse = str => str.trim().split(/\s+/).map(t => { const [n, d] = t.split(":"); return { f: n === "-" ? 0 : freq(n), d: +d || 1 }; });
+  const oompah = bars => bars.map(b => typeof b === "string" ? b : `${b[0]}:2 ${b[1]}:2 ${b[0]}:2 ${b[1]}:2`).join(" ");
+  const waltz = bars => bars.map(b => typeof b === "string" ? b : `${b[0]}:2 ${b[1]}:2 ${b[1]}:2`).join(" ");
+
+  // All melodies are original compositions.
+  const SONGS = {
+    // Hoedown-style harvest theme: front door, walking in, dining room
+    main: { bpm: 150, loop: true, drums: "khxhkhxh", voices: [
+      { wave: "square", vol: .11, legato: .8, notes:
+        "G4:1 B4:1 D5:2 B4:1 D5:1 G5:2  E5:1 D5:1 C5:2 E5:1 C5:1 G4:2  B4:1 A4:1 G4:1 B4:1 D5:2 B4:2  A4:2 F#4:1 A4:1 D5:3 -:1 " +
+        "G4:1 B4:1 D5:2 B4:1 D5:1 G5:2  A5:1 G5:1 E5:2 G5:1 E5:1 C5:2  D5:1 C5:1 B4:1 A4:1 F#4:2 A4:2  G4:3 D4:1 G4:2 -:2 " +
+        "B4:2 E5:2 G5:2 E5:2  C5:2 E5:2 G5:3 -:1  D5:1 E5:1 D5:1 B4:1 G4:2 B4:2  A4:1 B4:1 C5:1 D5:1 E5:2 F#5:2 " +
+        "G5:2 F#5:1 E5:1 B4:2 E5:2  E5:1 F#5:1 G5:1 E5:1 C5:2 E5:2  D5:2 A4:2 B4:1 C5:1 D5:1 F#4:1  A4:4 D5:2 -:2" },
+      { wave: "triangle", vol: .32, legato: .7, notes: oompah([
+        ["G2","D3"],["C3","G2"],["G2","D3"],["D3","A2"],["G2","D3"],["C3","G2"],["D3","A2"],["G2","D3"],
+        ["E2","B2"],["C3","G2"],["G2","D3"],["D3","A2"],["E2","B2"],["C3","G2"],["D3","A2"],["D3","A2"]]) } ] },
+    // Playful "thinking" music while circling the list
+    list: { bpm: 128, loop: true, drums: "k.h.k.h.", voices: [
+      { wave: "square", vol: .09, legato: .45, notes:
+        "F4:1 A4:1 C5:1 A4:1 F4:1 A4:1 C5:2  D5:1 C5:1 A4:1 F4:1 D4:2 -:2  Bb4:1 A4:1 Bb4:1 D5:1 F5:2 D5:2  C5:1 Bb4:1 A4:1 G4:1 E4:2 G4:2 " +
+        "F4:1 A4:1 C5:1 F5:1 E5:1 F5:1 C5:2  D5:1 F5:1 A5:1 F5:1 D5:2 -:2  Bb4:1 D5:1 F5:2 C5:1 E5:1 G5:2  F5:3 C5:1 F4:2 -:2" },
+      { wave: "triangle", vol: .3, legato: .6, notes: oompah([
+        ["F2","C3"],["D2","A2"],["Bb2","F2"],["C3","G2"],["F2","C3"],["D2","A2"],"Bb2:2 F2:2 C3:2 G2:2",["F2","C3"]]) } ] },
+    // Sad trombone-ish loop for getting sent to the car
+    sad: { bpm: 66, loop: true, voices: [
+      { wave: "triangle", vol: .3, legato: .95, notes: "E5:2 D5:2 C5:2 B4:2  A4:4 C5:2 A4:2  F4:2 A4:2 D5:2 C5:2  B4:4 G#4:2 E4:2" },
+      { wave: "sine", vol: .35, legato: .98, notes: "A2:8 F2:8 D2:8 E2:8" } ] },
+    // Cozy waltz for the living room
+    waltz: { bpm: 108, loop: true, drums: "k.h.h.", voices: [
+      { wave: "triangle", vol: .3, legato: .9, notes:
+        "G4:2 C5:2 E5:2  E5:3 D5:1 C5:2  A4:2 C5:2 F5:2  E5:2 D5:4  G4:2 C5:2 E5:2  A5:3 G5:1 E5:2  F5:2 E5:1 D5:1 B4:2  C5:6" },
+      { wave: "square", vol: .05, legato: .5, notes: waltz([
+        ["C3","G3"],["A2","E3"],["F2","C3"],["G2","D3"],["C3","G3"],["A2","E3"],"D3:2 A2:2 G2:2",["C3","G3"]]) } ] },
+    // Victory jingle on the final card
+    fanfare: { bpm: 160, loop: false, then: "waltz", voices: [
+      { wave: "square", vol: .1, legato: .9, notes: "C5:1 E5:1 G5:1 C6:3 G5:1 C6:5" },
+      { wave: "triangle", vol: .3, legato: .9, notes: "C3:6 G2:1 C3:5" } ] }
+  };
+  for (const k in SONGS) SONGS[k].voices.forEach(v => v.parsed = parse(v.notes));
+
+  let master = null, songGain = null, current = null, wanted = null, timer = null, noise = null;
+  function init() {
+    const c = ctx(); if (!c || master) return;
+    master = c.createGain(); master.gain.value = muted ? 0 : MUSIC_VOLUME * 0.25; master.connect(c.destination);
+    noise = c.createBuffer(1, c.sampleRate * 0.2, c.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function note(c, out, wave, f, t, dur, vol) {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = wave; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.linearRampToValueAtTime(vol * 0.6, t + dur * 0.5); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function drum(c, out, kind, t) {
+    if (kind === "k") {
+      const o = c.createOscillator(), g = c.createGain();
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+      g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.15);
+    } else {
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noise; f.type = "highpass"; f.frequency.value = kind === "x" ? 2500 : 7000;
+      const v = kind === "x" ? 0.12 : 0.05, len = kind === "x" ? 0.08 : 0.03;
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+      s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + len + 0.01);
+    }
+  }
+  function schedule(song, t0, out) {
+    const c = ctx(), e = 60 / song.bpm / 2; let len = 0;
+    song.voices.forEach(v => {
+      let t = 0;
+      v.parsed.forEach(n => { if (n.f) note(c, out, v.wave, n.f, t0 + t * e, n.d * e * v.legato, v.vol); t += n.d; });
+      len = Math.max(len, t);
+    });
+    if (song.drums) for (let i = 0; i < len; i++) { const k = song.drums[i % song.drums.length]; if (k !== ".") drum(c, out, k, t0 + i * e); }
+    return len * e;
+  }
+  function stop() {
+    clearTimeout(timer);
+    if (songGain) { const g = songGain, c = ctx(); g.gain.setTargetAtTime(0, c.currentTime, 0.05); setTimeout(() => g.disconnect(), 400); songGain = null; }
+    current = null;
+  }
+  function play(name) {
+    wanted = name;
+    if (!master || current === name) return;
+    stop(); current = name;
+    const c = ctx(), song = SONGS[name];
+    songGain = c.createGain(); songGain.connect(master);
+    const out = songGain; let t0 = c.currentTime + 0.1;
+    const loop = () => {
+      if (songGain !== out) return;
+      t0 += schedule(song, t0, out);
+      const wait = (t0 - c.currentTime - 0.4) * 1000;
+      if (song.loop) timer = setTimeout(loop, wait);
+      else if (song.then) timer = setTimeout(() => { current = null; play(song.then); }, wait + 400);
+    };
+    loop();
+  }
+  function unlock() { const c = ctx(); if (!c) return; if (c.state === "suspended") c.resume(); init(); if (wanted) play(wanted); }
+  function setMuted(m) { if (master) master.gain.setTargetAtTime(m ? 0 : MUSIC_VOLUME * 0.25, ctx().currentTime, 0.05); }
+  document.addEventListener("visibilitychange", () => {
+    const c = actx; if (!c) return;
+    if (document.hidden) c.suspend(); else if (started) c.resume();
+  });
+  return { play, unlock, setMuted };
+})();
+
+$("#mute").onclick = e => {
+  e.stopPropagation(); muted = !muted; e.target.textContent = muted ? "♪ OFF" : "♪ ON";
+  Music.setMuted(muted); if (!muted) Music.unlock();
+};
 
 /* ---------- Scenes, bars, toast ---------- */
 function showScene(id, textbox = true) {
@@ -576,6 +698,7 @@ async function submit() {
 let started = false;
 function startGame() {
   if (started) return; started = true;
+  Music.play("main"); Music.unlock();
   blip(523, .08); setTimeout(() => blip(784, .12), 90);
   loadClaims();
   scene1();
@@ -665,7 +788,7 @@ function updateCount() {
 $("#writeIn").addEventListener("input", updateCount);
 
 async function scene2() {
-  showScene("list", false);
+  showScene("list", false); Music.play("list");
   await loadClaims();
   renderList();
 }
@@ -682,7 +805,7 @@ async function refuseScene() {
   state.refusals++;
   const r = state.refusals, NU = state.name.toUpperCase();
   state.selected.clear(); state.writeIn = ""; $("#writeIn").value = "";
-  showScene("battle");
+  showScene("battle"); Music.play("sad");
   const aunt = $("#auntSpr"); aunt.classList.remove("gone");
   $("#held").innerHTML = ""; $("#hpText").textContent = "ITEMS: 0";
   setBar("patBar", 25);
@@ -717,12 +840,12 @@ async function refuseScene() {
   $("#walkBtn").textContent = "RETHINK IT ▶";
   await waitClick($("#walkBtn"));
   aunt.classList.remove("gone");
-  showScene("list", false); renderList();
+  showScene("list", false); Music.play("list"); renderList();
 }
 
 /* Scene 3 — back at the door, arms full */
 async function scene3() {
-  showScene("battle");
+  showScene("battle"); Music.play("main");
   const N = state.name;
   const picks = CONFIG.ITEMS.filter(i => state.selected.has(i.id));
   const names = picks.map(i => i.name.toUpperCase());
@@ -809,7 +932,7 @@ function renderCouch() {
   document.querySelector("#living .pball").textContent = "🏈";
 }
 async function livingRoom(savePromise) {
-  showScene("living"); renderCouch();
+  showScene("living"); renderCouch(); Music.play("waltz");
   const NU = state.name.toUpperCase();
   $("#txt").textContent = ""; $("#speaker").hidden = true;
   await sleep(300);
@@ -838,7 +961,7 @@ async function livingRoom(savePromise) {
 
 /* Scene 6 — results card */
 function showFinal(res) {
-  showScene("done", false);
+  showScene("done", false); Music.play("fanfare");
   $("#cShame").textContent = state.refusals;
   $("#shameRow").classList.toggle("on", state.refusals > 0);
   const picks = CONFIG.ITEMS.filter(i => state.selected.has(i.id)).map(i => `${i.emoji} ${i.name}`);
